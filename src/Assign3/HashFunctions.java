@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Scanner;
 
 /**
  *
@@ -12,39 +13,96 @@ import java.util.Collections;
  */
 public class HashFunctions {
 
+    //Initialize the array to store the data
     String[] theArray;
     int arraySize;
     int itemsInArray = 0;
 
     public static void main(String[] args) {
 
+        //User interface variable
+        String choice;
+
+        //Calls the read data class to read in the testdata file
         ReadData r = new ReadData();
         r.read();
 
-        ArrayList<String> elementsToAdd = new ArrayList<>();
+        //Elements to hash (the keys/full names)
+        //hashValues (the hash values the elements produce
+        //occurances(how many times the value was produced
+        ArrayList<String> elementsToHash = new ArrayList<>();
         ArrayList<Integer> hashValues = new ArrayList<>();
+        ArrayList<Integer> occurances = new ArrayList<>(Collections.nCopies(20011, 0));
+        
 
-        HashFunctions hf = new HashFunctions(20011);
+        //init hash map with 20011 size
+        int hashMapSize = 20011;
+        int items = 10000;
+        HashFunctions hf = new HashFunctions(hashMapSize);
 
-//        elementsToAdd .add("Shakeel");
-//        elementsToAdd.add("Raeez");
-//        elementsToAdd.add("adam");
-//        elementsToAdd.add("adam");
-        elementsToAdd = r.getListName();
+//        elementsToHash.add("ab");
+//        elementsToHash.add("cd");
+//        elementsToHash.add("ef");
+//        elementsToHash.add("ef");
 
-        for (int i = 0; i < elementsToAdd.size(); i++) {
+        //Fills elelemts to hash with data
+        elementsToHash = r.getListName();
+        
+        //UI Print statements
+        System.out.println("Which hash function would you like to use? (0, 1, 2, 3)");
+        Scanner sc = new Scanner(System.in);
+        choice = sc.nextLine();
+        switch (choice) {
+            case "0":
+                System.out.println("Worst Case Hash Function...");
+                break;
+            case "1":
+                System.out.println("Hash Function 1...");
+                break;
+            case "2":
+                System.out.println("Hash Function 2...");
+                break;
+            case "3":
+                System.out.println("Hash Function 3...");
+                break;
+        }
 
-            String element = elementsToAdd.get(i);
-            int hashVal = hf.WorstCaseHF(element); //Returns hash value
+        //Iterate over each element and hash them
+        for (int i = 0; i < elementsToHash.size(); i++) {
+
+            int hashVal = 0;
+            String element = elementsToHash.get(i);
+            switch (choice) {
+                case "0":
+                    hashVal = hf.WorstCaseHF(element); //Returns hash value
+                    break;
+                case "1":
+                    hashVal = hf.HashFunction1(element); //Returns hash value
+                    break;
+                case "2":
+                    hashVal = hf.HashFunction2(element); //Returns hash value 
+                    break;
+                case "3":
+                    hashVal = hf.HashFunction3(element); //Returns hash value
+                    break;
+                default:
+                    System.out.println("Invalid selection");
+                    System.exit(0);
+            }
             hashValues.add(hashVal); //Add hash value to array for entropy calculation
+            //Fills array with entire data element
             hf.theArray[hashVal] = element + " | " + r.getListNumber().get(i) + " | " + r.getListAddress().get(i);
+            //Updates occurances of the hash value
+            occurances.set(hashVal, occurances.get(hashVal) + 1);
 
         }
 
         // Locate the value 660 in the Hash Table
-        //hf.findKey("660");
-        //hf.displayTheStack();
-        System.out.println("Entropy Value: " + calcEntropy(20011, hashValues));
+        //findKey returns hash value
+        
+        
+        hf.displayTheStack();
+        System.out.println("Entropy Value: " + calcEntropy(items, hashValues, occurances));
         //hf.findKey("Lueilwitz Candelario");
     }
 
@@ -96,6 +154,7 @@ public class HashFunctions {
 
         }
 
+        //Big integer usage as the numbers were extremely large
         BigInteger hashValue = BigInteger.valueOf(hashVal);
         BigInteger arraySizeB = BigInteger.valueOf(arraySize);
         BigInteger returnVal = hashValue.mod(arraySizeB);
@@ -104,13 +163,16 @@ public class HashFunctions {
 
     }
 
+    //Hash Function 3
+    //Adds unicode of each letter and * 2 each time
+    //SImilar to HF 2
     public int HashFunction3(String key) {
 
         int hashVal = 0;
 
         for (int i = 0; i < key.length(); i++) {
 
-            hashVal = (3 * hashVal) + key.charAt(i);
+            hashVal = (2 * hashVal) + key.charAt(i);
 
         }
 
@@ -121,64 +183,48 @@ public class HashFunctions {
 
     }
 
-    public static double calcEntropy(int m, ArrayList h) {
+    //Method to calculate entropy of HF given its hash values and the occurances of those hash values
+    public static double calcEntropy(int n, ArrayList h, ArrayList occur) {
 
-        ArrayList<String> unique = new ArrayList<>();
-        ArrayList<Integer> occurances = new ArrayList<>(Collections.nCopies(20011, 0));
-
-        for (int i = 0; i < h.size(); i++) {
-
-            if (unique.contains(h.get(i).toString())) {
-                
-                occurances.set(unique.indexOf(h.get(i).toString()), occurances.get(unique.indexOf(h.get(i).toString())) + 1);
-
-            } else {
-                unique.add(h.get(i).toString());
-                occurances.set(unique.indexOf(h.get(i).toString()), occurances.get(i) + 1);
-            }
-
-        }
-
-        System.out.println("HashVal 1: " + unique.toString());
-        System.out.println("Occurrances: " + occurances.toString());
-      
+        ArrayList<Integer> occurances = occur;
         ArrayList<BigDecimal> occurOverN = new ArrayList<>();
 
-        for (int i = 0; i < occurances.size(); i++) {
-
+        //Dividing occurances by n
+        for (int i = 0; i < occur.size(); i++) {
+            
             if (occurances.get(i) != 0) {
                 BigDecimal occurance = new BigDecimal(occurances.get(i));
-                BigDecimal M = BigDecimal.valueOf(10000);
-                BigDecimal prob = occurance.divide(M, 30, BigDecimal.ROUND_HALF_UP);
-                
+                BigDecimal M = BigDecimal.valueOf(n);
+                BigDecimal prob = occurance.divide(M, 30, BigDecimal.ROUND_HALF_UP);//30 decimal places
+
                 occurOverN.add(prob);
             }
 
         }
-        System.out.println("Occurances/n: " + occurOverN.toString());
-
+        
+        //Array list of all the values calculated after the log function is applied
         ArrayList<Double> logCalc = new ArrayList<>();
 
         double entropy = 0;
 
         for (int i = 0; i < occurOverN.size(); i++) {
-
-            
-            Double logVal = -1 * (occurOverN.get(i).doubleValue() * Math.log10(occurOverN.get(i).doubleValue()));
+            //-P(x) x Log(P(x))
+            Double logVal = -1 * (occurOverN.get(i).doubleValue() * Math.log(occurOverN.get(i).doubleValue()));
             logCalc.add(logVal);
 
             entropy += logCalc.get(i);
 
         }
-        System.out.println("OccurOverN double value: " + occurOverN.get(0).doubleValue());
-        System.out.println("Log value: " + Math.log10(occurOverN.get(0).doubleValue()));
-        
+        //Print statements
+//        System.out.println("OccurOverN double value: " + occurOverN.get(0).doubleValue());
+//        System.out.println("Log value: " + Math.log10(occurOverN.get(0).doubleValue()));
 
         //DO the rest
         return entropy;
 
     }
 
+    //This function finds the hash value given a key
     public String findKey(String key) {
 
         // Find the keys original hash key
@@ -209,11 +255,12 @@ public class HashFunctions {
 
     }
 
+    //This prints a visual representation of the array
     public void displayTheStack() {
 
         int increment = 0;
 
-        for (int m = 0; m < 10; m++) {
+        for (int m = 0; m < 10; m++) {//Change 10 to how many rows you want of 10 length each to be displayed
 
             increment += 10;
 
@@ -225,6 +272,7 @@ public class HashFunctions {
 
             for (int n = increment - 10; n < increment; n++) {
 
+                //Formatting...
                 System.out.format("| %18s " + "", n);
 
             }
